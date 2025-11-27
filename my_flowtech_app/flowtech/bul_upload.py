@@ -18,7 +18,7 @@ def upload_bulk_items(parent, file_url):
     if not os.path.exists(file_path):
         frappe.throw(f"File not found: {file_path}")
 
-    parent_doc = frappe.get_doc('Order Enquiry', parent)
+    parent_doc = frappe.get_doc('Enquiry', parent)
     count = 0
 
     # Determine file type
