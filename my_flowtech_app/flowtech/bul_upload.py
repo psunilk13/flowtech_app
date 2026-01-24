@@ -2,12 +2,18 @@ import frappe
 import csv
 import os
 import openpyxl
+import subprocess
 from frappe.utils.file_manager import get_files_path
+from pdf2image import convert_from_path
 
+
+# =====================================================
+# BULK UPLOAD ITEMS (CSV / EXCEL)
+# =====================================================
 @frappe.whitelist()
 def upload_bulk_items(parent, file_url):
     """
-    Upload CSV or Excel (.xlsx) data into 'items_details' child table of Order Enquiry,
+    Upload CSV or Excel (.xlsx) data into 'items_details' child table of Enquiry,
     automatically fetching Warehouse and warehouse_qty from Bin based on Item.
     """
 
@@ -25,7 +31,11 @@ def upload_bulk_items(parent, file_url):
     file_ext = os.path.splitext(file_path)[1].lower()
 
     def get_warehouse(item_code):
-        bin_doc = frappe.get_all("Bin", filters={"item_code": item_code}, fields=["warehouse", "actual_qty"])
+        bin_doc = frappe.get_all(
+            "Bin",
+            filters={"item_code": item_code},
+            fields=["warehouse", "actual_qty"]
+        )
         if bin_doc:
             return bin_doc[0]["warehouse"], bin_doc[0]["actual_qty"]
         return "", 0
@@ -61,13 +71,16 @@ def upload_bulk_items(parent, file_url):
         expected_columns = {"item", "item_name", "quantity", "actual_price"}
 
         if not expected_columns.issubset(set(headers)):
-            frappe.throw(f"Missing columns in Excel file. Expected: {', '.join(expected_columns)}")
+            frappe.throw(
+                f"Missing columns in Excel file. Expected: {', '.join(expected_columns)}"
+            )
 
         idx = {header: headers.index(header) for header in headers}
 
         for row in sheet.iter_rows(min_row=2, values_only=True):
             if not any(row):
                 continue
+
             item_code = row[idx["item"]]
             item_name = row[idx["item_name"]]
             quantity = row[idx["quantity"]]
@@ -91,3 +104,66 @@ def upload_bulk_items(parent, file_url):
     frappe.db.commit()
 
     return f"✅ Successfully uploaded {count} items with Warehouse info."
+
+
+# =====================================================
+# PDF → IMAGE GENERATION FOR ENQUIRY PRINT
+# =====================================================
+from frappe.utils.file_manager import get_file_path
+
+def generate_images_for_enquiry(doc, method=None, *args, **kwargs):
+
+    if not doc.print_technical_documents:
+        return
+
+    updated = False
+
+    for row in doc.if_any_technical_documents_upload_here:
+
+        if not row.print_this or not row.file:
+            continue
+
+        if getattr(row, "generated_image", None):
+            continue
+
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": row.file})
+        except frappe.DoesNotExistError:
+            continue
+
+        pdf_path = get_file_path(file_doc.file_url)
+        if not os.path.exists(pdf_path):
+            continue
+
+        if not pdf_path.lower().endswith(".pdf"):
+            continue
+
+        images = convert_from_path(
+            pdf_path,
+            dpi=300,
+            poppler_path="/usr/bin"
+        )
+
+        image_urls = []
+
+        for idx, image in enumerate(images, start=1):
+            img_name = f"{doc.name}_{row.name}_page_{idx}.png"
+            img_path = frappe.get_site_path("private/files", img_name)
+            image.save(img_path, "PNG")
+
+            image_file = frappe.get_doc({
+                "doctype": "File",
+                "file_name": img_name,
+                "file_url": f"/private/files/{img_name}",
+                "is_private": 1
+            })
+            image_file.insert(ignore_permissions=True)
+
+            image_urls.append(image_file.file_url)
+
+        if image_urls:
+            row.generated_image = ",".join(image_urls)
+            updated = True
+
+    if updated:
+        doc.save(ignore_permissions=True)
