@@ -1,9 +1,30 @@
+# hooks.py
 app_name = "my_flowtech_app"
 app_title = "flowtech"
 app_publisher = "jagapatibabu"
 app_description = "nothing"
 app_email = "jagapati@gmail.com"
 app_license = "mit"
+
+permission_query_conditions = {
+    "Offer Approval": "my_flowtech_app.flowtech.permissions.get_permission_query_conditions"
+}
+
+# --------------------------------------------------
+# DOC EVENTS
+# --------------------------------------------------
+doc_events = {
+    "Enquiry": {
+        "before_print": "my_flowtech_app.bul_upload.generate_images_for_enquiry"
+    }
+}
+
+
+
+
+
+
+
 
 # Apps
 # ------------------
@@ -241,4 +262,27 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+
+
+# doc_events = {
+#     "Order Enquiry": {
+#         "after_save": "my_flowtech_app.my_flowtech_app.flowtech.order_enquiry.OrderEnquiry.after_save"
+#     }
+# }
+
+
+#doc_events = {
+#    "Order Enquiry": {
+#        "after_save": "my_flowtech_app.flowtech.order_enquiry.after_save"
+#    }
+#}
+
+
+
+
+#override_doctype_class = {
+#"Employee": "my_flowtech_app.my_flowtech_app.overrides.employee.CustomEmployee"
+#}
+
 
