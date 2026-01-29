@@ -4,6 +4,7 @@ import os
 import openpyxl
 from frappe.utils.file_manager import get_files_path, get_file_path
 
+
 # =====================================================
 # BULK UPLOAD ITEMS (CSV / EXCEL)
 # =====================================================
@@ -31,7 +32,7 @@ def upload_bulk_items(parent, file_url):
 
     ext = os.path.splitext(file_path)[1].lower()
 
-    # ---------- CSV ----------
+    # ---------------- CSV ----------------
     if ext == ".csv":
         with open(file_path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -51,7 +52,7 @@ def upload_bulk_items(parent, file_url):
                 })
                 count += 1
 
-    # ---------- EXCEL ----------
+    # ---------------- EXCEL ----------------
     elif ext == ".xlsx":
         wb = openpyxl.load_workbook(file_path)
         sheet = wb.active
@@ -89,12 +90,12 @@ def upload_bulk_items(parent, file_url):
 
 
 # =====================================================
-# PDF → IMAGE (FRAPPE CLOUD SAFE)
+# PDF → IMAGE GENERATION (FRAPPE CLOUD SAFE)
 # =====================================================
-def generate_images_for_enquiry(doc, settings=None):
+def generate_images_for_enquiry(doc, method=None, settings=None):
     """
+    Called from before_print hook.
     Converts PDF pages to images using PyMuPDF (fitz).
-    SAFE for Frappe Cloud.
     """
 
     if not doc.get("print_technical_documents"):
@@ -103,12 +104,13 @@ def generate_images_for_enquiry(doc, settings=None):
     try:
         import fitz  # PyMuPDF
     except ImportError:
-        frappe.log_error("PyMuPDF not installed", "Print Hook")
+        frappe.log_error("PyMuPDF not installed", "before_print")
         return
 
     updated = False
 
     for row in doc.get("if_any_technical_documents_upload_here", []):
+
         if not row.print_this or not row.file:
             continue
 
@@ -135,7 +137,7 @@ def generate_images_for_enquiry(doc, settings=None):
             page = pdf[page_no]
             pix = page.get_pixmap(dpi=150)
 
-            img_name = f"{doc.name}_{row.name}_{page_no + 1}.png"
+            img_name = f"{doc.name}_{row.name}_page_{page_no + 1}.png"
             img_path = frappe.get_site_path("private/files", img_name)
             pix.save(img_path)
 
