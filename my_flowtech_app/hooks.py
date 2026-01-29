@@ -6,9 +6,9 @@ app_description = "nothing"
 app_email = "jagapati@gmail.com"
 app_license = "mit"
 
-permission_query_conditions = {
-    "Offer Approval": "my_flowtech_app.flowtech.permissions.get_permission_query_conditions"
-}
+# permission_query_conditions = {
+#     "Offer Approval": "my_flowtech_app.flowtech.permissions.get_permission_query_conditions"
+# }
 
 # --------------------------------------------------
 # DOC EVENTS
