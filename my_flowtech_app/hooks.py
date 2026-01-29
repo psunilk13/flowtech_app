@@ -15,9 +15,10 @@ app_license = "mit"
 # --------------------------------------------------
 doc_events = {
     "Enquiry": {
-        "before_print": "my_flowtech_app.bul_upload.generate_images_for_enquiry"
+        "before_print": "my_flowtech_app.flowtech.bul_upload.generate_images_for_enquiry"
     }
 }
+
 
 
 
