@@ -279,13 +279,11 @@ from frappe.utils.file_manager import get_files_path
 @frappe.whitelist()
 def upload_bulk_items(parent, file_url):
     """
-    Upload CSV or Excel (.xlsx) data into 'items_details' child table of Enquiry.
-    - GST strictly from file
-    - Warehouse from file (if given) else from Bin
-    - Warehouse Qty fetched correctly
+    Bulk upload items into Enquiry -> items_details child table
+    GST is a Link to GST Rates DocType
     """
 
-    # Get file
+    # ---------------- FILE ---------------- #
     file_doc = frappe.get_doc("File", {"file_url": file_url})
     file_path = os.path.join(get_files_path(), file_doc.file_name)
 
@@ -298,12 +296,33 @@ def upload_bulk_items(parent, file_url):
     # ---------------- HELPERS ---------------- #
 
     def normalize_gst(gst):
-        if gst is None:
-            return None
-        gst = str(gst).strip()
-        if gst.endswith("%"):
-            return gst
-        return f"{gst}%"
+        """
+        Normalize GST to valid GST Rates DocType name
+        """
+        if gst in (None, "", 0):
+            gst_value = "0%"
+        else:
+            try:
+                gst = float(gst)
+                if gst < 1:
+                    gst = int(round(gst * 100))
+                else:
+                    gst = int(round(gst))
+                gst_value = f"{gst}%"
+            except Exception:
+                gst_value = str(gst).strip()
+
+        if not frappe.db.exists("GST Rates", gst_value):
+            frappe.throw(f"Invalid GST Rate in file: {gst_value}")
+
+        return gst_value
+
+    def get_bin_qty(item_code, warehouse):
+        return frappe.db.get_value(
+            "Bin",
+            {"item_code": item_code, "warehouse": warehouse},
+            "actual_qty"
+        ) or 0
 
     def get_warehouse_from_bin(item_code):
         bins = frappe.get_all(
@@ -316,22 +335,16 @@ def upload_bulk_items(parent, file_url):
             return bins[0]["warehouse"], bins[0]["actual_qty"]
         return "", 0
 
-    def get_bin_qty(item_code, warehouse):
-        return frappe.db.get_value(
-            "Bin",
-            {"item_code": item_code, "warehouse": warehouse},
-            "actual_qty"
-        ) or 0
-
-    # ---------------- CSV UPLOAD ---------------- #
+    # ---------------- PROCESS FILE ---------------- #
 
     file_ext = os.path.splitext(file_path)[1].lower()
 
+    # ---------- CSV ---------- #
     if file_ext == ".csv":
         with open(file_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            for row in reader:
 
+            for row in reader:
                 item_code = row.get("item")
                 if not item_code:
                     continue
@@ -355,8 +368,7 @@ def upload_bulk_items(parent, file_url):
                 })
                 count += 1
 
-    # ---------------- EXCEL UPLOAD ---------------- #
-
+    # ---------- EXCEL ---------- #
     elif file_ext == ".xlsx":
         wb = openpyxl.load_workbook(file_path)
         sheet = wb.active
@@ -364,13 +376,14 @@ def upload_bulk_items(parent, file_url):
         headers = [str(cell.value).strip() for cell in sheet[1]]
         idx = {h: i for i, h in enumerate(headers)}
 
-        required = {
+        required_cols = {
             "custom_serial_no", "item", "item_name",
             "quantity", "actual_price", "discount", "gst"
         }
 
-        if not required.issubset(idx):
-            frappe.throw(f"Missing columns: {', '.join(required - set(idx))}")
+        missing = required_cols - set(idx)
+        if missing:
+            frappe.throw(f"Missing columns: {', '.join(missing)}")
 
         for row in sheet.iter_rows(min_row=2, values_only=True):
             if not any(row):
@@ -402,10 +415,9 @@ def upload_bulk_items(parent, file_url):
             count += 1
 
     else:
-        frappe.throw("Only CSV or XLSX files are supported")
+        frappe.throw("Only CSV and XLSX files are supported")
 
     parent_doc.save(ignore_permissions=True)
     frappe.db.commit()
 
     return f"✅ Successfully uploaded {count} items"
-
