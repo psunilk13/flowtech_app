@@ -361,6 +361,7 @@ def upload_bulk_items(parent, file_url):
                     "item_name": row.get("item_name"),
                     "quantity": row.get("quantity"),
                     "actual_price": row.get("actual_price"),
+                    "discount": row.get("discount"),
                     "gst": normalize_gst(row.get("gst")),
                     "warehouse": warehouse,
                     "warehouse_qty": warehouse_qty
@@ -377,7 +378,7 @@ def upload_bulk_items(parent, file_url):
 
         required_cols = {
             "custom_serial_no", "item", "item_name",
-            "quantity", "actual_price", "gst"
+            "quantity", "actual_price", "discount", "gst"
         }
 
         missing = required_cols - set(idx)
@@ -406,6 +407,7 @@ def upload_bulk_items(parent, file_url):
                 "item_name": row[idx["item_name"]],
                 "quantity": row[idx["quantity"]],
                 "actual_price": row[idx["actual_price"]],
+                "discount": row[idx["discount"]],
                 "gst": normalize_gst(row[idx["gst"]]),
                 "warehouse": warehouse,
                 "warehouse_qty": warehouse_qty
