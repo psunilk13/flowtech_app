@@ -373,13 +373,25 @@ def upload_bulk_items(parent, file_url):
         wb = openpyxl.load_workbook(file_path)
         sheet = wb.active
 
-        headers = [str(cell.value).strip() for cell in sheet[1]]
-        idx = {h: i for i, h in enumerate(headers)}
+        # headers = [str(cell.value).strip() for cell in sheet[1]]
+		headers = [
+    str(cell.value).strip().lower() if cell.value else ""
+    for cell in sheet[1]
+]
 
-        required_cols = {
-            "custom_serial_no", "item", "item_name",
-            "quantity", "actual_price", "discount", "gst"
-        }
+        # idx = {h: i for i, h in enumerate(headers)}
+		idx = {h.lower(): i for i, h in enumerate(headers) if h}
+
+
+        # required_cols = {
+        #     "custom_serial_no", "item", "item_name",
+        #     "quantity", "actual_price", "discount", "gst"
+        # }
+
+		required_cols = {
+    "custom_serial_no", "item", "item_name",
+    "quantity", "actual_price", "discount", "gst"
+}
 
         missing = required_cols - set(idx)
         if missing:
