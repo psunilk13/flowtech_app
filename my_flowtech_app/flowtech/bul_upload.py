@@ -1,92 +1,92 @@
-# import frappe
-# import csv
-# import os
-# import openpyxl
-# from frappe.utils.file_manager import get_files_path, get_file_path
+import frappe
+import csv
+import os
+import openpyxl
+from frappe.utils.file_manager import get_files_path, get_file_path
 
 
-# # =====================================================
-# # BULK UPLOAD ITEMS (CSV / EXCEL)
-# # =====================================================
-# @frappe.whitelist()
-# def upload_bulk_items(parent, file_url):
+# =====================================================
+# BULK UPLOAD ITEMS (CSV / EXCEL)
+# =====================================================
+@frappe.whitelist()
+def upload_bulk_items(parent, file_url):
 
-#     file_doc = frappe.get_doc("File", {"file_url": file_url})
-#     file_path = os.path.join(get_files_path(), os.path.basename(file_doc.file_name))
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_path = os.path.join(get_files_path(), os.path.basename(file_doc.file_name))
 
-#     if not os.path.exists(file_path):
-#         frappe.throw(f"File not found: {file_path}")
+    if not os.path.exists(file_path):
+        frappe.throw(f"File not found: {file_path}")
 
-#     parent_doc = frappe.get_doc("Enquiry", parent)
-#     count = 0
+    parent_doc = frappe.get_doc("Enquiry", parent)
+    count = 0
 
-#     def get_warehouse(item_code):
-#         bin_doc = frappe.get_all(
-#             "Bin",
-#             filters={"item_code": item_code},
-#             fields=["warehouse", "actual_qty"]
-#         )
-#         if bin_doc:
-#             return bin_doc[0]["warehouse"], bin_doc[0]["actual_qty"]
-#         return "", 0
+    def get_warehouse(item_code):
+        bin_doc = frappe.get_all(
+            "Bin",
+            filters={"item_code": item_code},
+            fields=["warehouse", "actual_qty"]
+        )
+        if bin_doc:
+            return bin_doc[0]["warehouse"], bin_doc[0]["actual_qty"]
+        return "", 0
 
-#     ext = os.path.splitext(file_path)[1].lower()
+    ext = os.path.splitext(file_path)[1].lower()
 
-#     # ---------------- CSV ----------------
-#     if ext == ".csv":
-#         with open(file_path, encoding="utf-8") as f:
-#             reader = csv.DictReader(f)
-#             for row in reader:
-#                 if not row.get("item"):
-#                     continue
+    # ---------------- CSV ----------------
+    if ext == ".csv":
+        with open(file_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if not row.get("item"):
+                    continue
 
-#                 warehouse, warehouse_qty = get_warehouse(row["item"])
+                warehouse, warehouse_qty = get_warehouse(row["item"])
 
-#                 parent_doc.append("items_details", {
-#                     "item": row.get("item"),
-#                     "item_name": row.get("item_name"),
-#                     "quantity": row.get("quantity"),
-#                     "actual_price": row.get("actual_price"),
-#                     "warehouse": warehouse,
-#                     "warehouse_qty": warehouse_qty
-#                 })
-#                 count += 1
+                parent_doc.append("items_details", {
+                    "item": row.get("item"),
+                    "item_name": row.get("item_name"),
+                    "quantity": row.get("quantity"),
+                    "actual_price": row.get("actual_price"),
+                    "warehouse": warehouse,
+                    "warehouse_qty": warehouse_qty
+                })
+                count += 1
 
-#     # ---------------- EXCEL ----------------
-#     elif ext == ".xlsx":
-#         wb = openpyxl.load_workbook(file_path)
-#         sheet = wb.active
-#         headers = [cell.value for cell in sheet[1]]
+    # ---------------- EXCEL ----------------
+    elif ext == ".xlsx":
+        wb = openpyxl.load_workbook(file_path)
+        sheet = wb.active
+        headers = [cell.value for cell in sheet[1]]
 
-#         required = {"item", "item_name", "quantity", "actual_price"}
-#         if not required.issubset(headers):
-#             frappe.throw("Excel missing required columns")
+        required = {"item", "item_name", "quantity", "actual_price"}
+        if not required.issubset(headers):
+            frappe.throw("Excel missing required columns")
 
-#         idx = {h: headers.index(h) for h in headers}
+        idx = {h: headers.index(h) for h in headers}
 
-#         for row in sheet.iter_rows(min_row=2, values_only=True):
-#             if not row or not row[idx["item"]]:
-#                 continue
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            if not row or not row[idx["item"]]:
+                continue
 
-#             warehouse, warehouse_qty = get_warehouse(row[idx["item"]])
+            warehouse, warehouse_qty = get_warehouse(row[idx["item"]])
 
-#             parent_doc.append("items_details", {
-#                 "item": row[idx["item"]],
-#                 "item_name": row[idx["item_name"]],
-#                 "quantity": row[idx["quantity"]],
-#                 "actual_price": row[idx["actual_price"]],
-#                 "warehouse": warehouse,
-#                 "warehouse_qty": warehouse_qty
-#             })
-#             count += 1
+            parent_doc.append("items_details", {
+                "item": row[idx["item"]],
+                "item_name": row[idx["item_name"]],
+                "quantity": row[idx["quantity"]],
+                "actual_price": row[idx["actual_price"]],
+                "warehouse": warehouse,
+                "warehouse_qty": warehouse_qty
+            })
+            count += 1
 
-#     else:
-#         frappe.throw("Upload only CSV or XLSX")
+    else:
+        frappe.throw("Upload only CSV or XLSX")
 
-#     parent_doc.save(ignore_permissions=True)
-#     frappe.db.commit()
+    parent_doc.save(ignore_permissions=True)
+    frappe.db.commit()
 
-#     return f"Uploaded {count} items successfully"
+    return f"Uploaded {count} items successfully"
 
 
 # # =====================================================
