@@ -285,6 +285,7 @@ app_license = "mit"
 
 override_doctype_class = {
     "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
+}
      
 
 
