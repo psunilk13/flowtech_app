@@ -283,6 +283,16 @@ app_license = "mit"
 #     "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
 # }
 
+doc_events = {
+    # "Enquiry": {
+    #     "before_print": "my_flowtech_app.bul_upload.generate_images_for_enquiry"
+    # },
+    "OA Register":{
+            "validate": "my_flowtech_app.flowtech.main.validate",
+            "before_save": "my_flowtech_app.flowtech.main.sort_committed_delivery_rows"
+    }
+}
+
 override_doctype_class = {
     "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
 }
