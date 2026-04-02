@@ -1,6 +1,6 @@
 import frappe
-from my_flowtech_app.events.committed_qty import validate_committed_qty
-from my_flowtech_app.events.technical_specs_backend import validate_technical_specs
+from my_flowtech_app.flowtech.committed_qty import validate_committed_qty
+from my_flowtech_app.flowtech.technical_specs_backend import validate_technical_specs
 
 
 def validate(doc, method=None):
