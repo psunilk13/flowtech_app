@@ -279,9 +279,9 @@ app_license = "mit"
 #    }
 #}
 
-doc_events = {
-    "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
-}
+# doc_events = {
+#     "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
+# }
 
 
 
