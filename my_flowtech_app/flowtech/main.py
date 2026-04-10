@@ -34,8 +34,8 @@
 # CODE 2
 
 import frappe
-from my_flowtech_app.events.committed_qty import validate_committed_qty
-from my_flowtech_app.events.technical_specs_backend import validate_technical_specs
+from my_flowtech_app.flowtech.committed_qty import validate_committed_qty
+from my_flowtech_app.flowtech.technical_specs_backend import validate_technical_specs
 
 
 def validate(doc, method=None):
@@ -71,7 +71,7 @@ def sort_committed_delivery_rows(doc, method=None):
 
     doc.set("committed_delivery_schedule", sorted_rows)
 
-#     for i, row in enumerate(sorted_rows, start=1):
-#         row.idx = i
+    for i, row in enumerate(sorted_rows, start=1):
+        row.idx = i
 
-#     doc.set("committed_delivery_schedule", sorted_rows)
+    doc.set("committed_delivery_schedule", sorted_rows)
