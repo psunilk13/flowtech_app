@@ -169,6 +169,11 @@
 #     # =========================
 #     oa.save()
 
+#     if ri:
+#         ri.save()
+
+#     return "Items Cancelled Successfully"
+
 # code 2
 
 import frappe
@@ -346,8 +351,3 @@ def cancel_oa_items(oa_name, items):
         ri.save()
 
     return "Items Cancelled Successfully"\
-
-#     if ri:
-#         ri.save()
-
-#     return "Items Cancelled Successfully"
