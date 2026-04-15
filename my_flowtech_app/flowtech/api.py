@@ -350,4 +350,4 @@ def cancel_oa_items(oa_name, items):
     if ri:
         ri.save()
 
-    return "Items Cancelled Successfully"\
+    return "Items Cancelled Successfully"
