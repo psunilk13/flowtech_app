@@ -351,3 +351,87 @@ def cancel_oa_items(oa_name, items):
         ri.save()
 
     return "Items Cancelled Successfully"
+
+# =====================================================
+# GENERIC DOCUMENT IMPORT API
+# =====================================================
+
+import frappe
+
+@frappe.whitelist()
+def import_document():
+
+    data = frappe.request.get_json()
+
+    if not data:
+        frappe.throw("No JSON received.")
+
+    doctype = data.get("doctype")
+    name = data.get("name")
+
+    if not doctype:
+        frappe.throw("doctype is mandatory")
+
+    if not name:
+        frappe.throw("name is mandatory")
+
+    # Already exists?
+    if frappe.db.exists(doctype, name):
+        return {
+            "status": "exists",
+            "doctype": doctype,
+            "name": name
+        }
+
+    # Remove fields that should never be imported
+    remove_fields = [
+        "owner",
+        "creation",
+        "modified",
+        "modified_by",
+        "_user_tags",
+        "_comments",
+        "_assign",
+        "_liked_by",
+        "__last_sync_on"
+    ]
+
+    for f in remove_fields:
+        data.pop(f, None)
+
+    # Clean child tables
+    for key, value in data.items():
+
+        if isinstance(value, list):
+
+            for row in value:
+
+                if isinstance(row, dict):
+
+                    row.pop("parent", None)
+                    row.pop("parentfield", None)
+                    row.pop("parenttype", None)
+                    row.pop("owner", None)
+                    row.pop("creation", None)
+                    row.pop("modified", None)
+                    row.pop("modified_by", None)
+
+    # Create document
+    doc = frappe.get_doc(data)
+
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_links = False
+    doc.flags.ignore_mandatory = False
+
+    # Try to preserve original name
+    doc.name = name
+
+    doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "doctype": doctype,
+        "name": doc.name
+    }
