@@ -357,9 +357,11 @@ def cancel_oa_items(oa_name, items):
 # =====================================================
 
 import frappe
+from frappe.model.rename_doc import rename_doc
 
-@frappe.whitelist(methods=["POST"])
-def import_document():
+
+@frappe.whitelist()
+def rename_document():
 
     data = frappe.request.get_json()
 
@@ -367,41 +369,31 @@ def import_document():
         frappe.throw("No JSON received")
 
     doctype = data.get("doctype")
-    name = data.get("name")
+    old_name = data.get("old_name")
+    new_name = data.get("new_name")
 
-    if not doctype:
-        frappe.throw("doctype is required")
+    if not frappe.db.exists(doctype, old_name):
+        frappe.throw(f"{doctype} {old_name} not found")
 
-    if not name:
-        frappe.throw("name is required")
-
-    # Already Exists
-    if frappe.db.exists(doctype, name):
-        return {
+    if frappe.db.exists(doctype, new_name):
+        frappe.response["message"] = {
             "status": "exists",
-            "doctype": doctype,
-            "name": name
+            "name": new_name
         }
+        return
 
-    # Create document
-    doc = frappe.get_doc(data)
-
-    # Ignore permissions
-    doc.flags.ignore_permissions = True
-
-    # Preserve original document name
-    doc.name = name
-
-    # Disable automatic naming
-    doc.set_new_name = lambda: None
-
-    # Insert
-    doc.insert(ignore_if_duplicate=True)
+    rename_doc(
+        doctype,
+        old_name,
+        new_name,
+        force=True,
+        merge=False
+    )
 
     frappe.db.commit()
 
-    return {
+    frappe.response["message"] = {
         "status": "success",
         "doctype": doctype,
-        "name": doc.name
+        "name": new_name
     }
