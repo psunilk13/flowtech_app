@@ -358,24 +358,24 @@ def cancel_oa_items(oa_name, items):
 
 import frappe
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def import_document():
 
     data = frappe.request.get_json()
 
     if not data:
-        frappe.throw("No JSON received.")
+        frappe.throw("No JSON received")
 
     doctype = data.get("doctype")
     name = data.get("name")
 
     if not doctype:
-        frappe.throw("doctype is mandatory")
+        frappe.throw("doctype is required")
 
     if not name:
-        frappe.throw("name is mandatory")
+        frappe.throw("name is required")
 
-    # Already exists?
+    # Already Exists
     if frappe.db.exists(doctype, name):
         return {
             "status": "exists",
@@ -383,50 +383,20 @@ def import_document():
             "name": name
         }
 
-    # Remove fields that should never be imported
-    remove_fields = [
-        "owner",
-        "creation",
-        "modified",
-        "modified_by",
-        "_user_tags",
-        "_comments",
-        "_assign",
-        "_liked_by",
-        "__last_sync_on"
-    ]
-
-    for f in remove_fields:
-        data.pop(f, None)
-
-    # Clean child tables
-    for key, value in data.items():
-
-        if isinstance(value, list):
-
-            for row in value:
-
-                if isinstance(row, dict):
-
-                    row.pop("parent", None)
-                    row.pop("parentfield", None)
-                    row.pop("parenttype", None)
-                    row.pop("owner", None)
-                    row.pop("creation", None)
-                    row.pop("modified", None)
-                    row.pop("modified_by", None)
-
     # Create document
     doc = frappe.get_doc(data)
 
+    # Ignore permissions
     doc.flags.ignore_permissions = True
-    doc.flags.ignore_links = False
-    doc.flags.ignore_mandatory = False
 
-    # Try to preserve original name
+    # Preserve original document name
     doc.name = name
 
-    doc.insert(ignore_permissions=True)
+    # Disable automatic naming
+    doc.set_new_name = lambda: None
+
+    # Insert
+    doc.insert(ignore_if_duplicate=True)
 
     frappe.db.commit()
 
