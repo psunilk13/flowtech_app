@@ -397,3 +397,40 @@ def rename_document():
         "doctype": doctype,
         "name": new_name
     }
+import json
+import frappe
+from frappe import _
+
+
+@frappe.whitelist(methods=["POST"])
+def import_salary_slip():
+    """
+    Import Salary Slip exactly as received.
+    No recalculation.
+    """
+
+    data = frappe.request.get_json()
+
+    if not data:
+        frappe.throw(_("No data received"))
+
+    # Remove existing if already present
+    if frappe.db.exists("Salary Slip", data.get("name")):
+        frappe.delete_doc("Salary Slip", data["name"], force=True)
+
+    doc = frappe.get_doc(data)
+
+    # Ignore standard validations
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_links = True
+    doc.flags.ignore_mandatory = True
+    doc.flags.ignore_validate = True
+
+    doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "name": doc.name
+    }
