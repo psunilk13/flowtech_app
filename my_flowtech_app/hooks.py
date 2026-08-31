@@ -290,11 +290,15 @@ doc_events = {
     "OA Register":{
             "validate": "my_flowtech_app.flowtech.main.validate",
             "before_save": "my_flowtech_app.flowtech.main.sort_committed_delivery_rows"
+    },
+	"Salary Slip": {
+        "on_submit": "my_flowtech_app.events.salary_slip.submit_annual_additional_payroll"
     }
 }
 
 override_doctype_class = {
-    "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote"
+    "Delivery Note": "my_flowtech_app.flowtech.delivery_note.CustomDeliveryNote",
+	"Salary Slip": "my_flowtech_app.overrides.salary_slip.SalarySlip"
 }
      
 
