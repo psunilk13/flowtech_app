@@ -293,6 +293,10 @@ doc_events = {
     },
 	"Salary Slip": {
         "on_submit": "my_flowtech_app.events.salary_slip.submit_annual_additional_payroll"
+    },
+	"Employee Checkin": {
+        "before_insert": "my_flowtech_app.overrides.employee_checkin.before_save",
+        "before_save": "my_flowtech_app.overrides.employee_checkin.before_save",
     }
 }
 
